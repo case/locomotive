@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 	"time"
 
@@ -159,6 +160,11 @@ func SubscribeToServiceLogs(ctx context.Context, g *railway.GraphQLClient, logTr
 				projectName = "undefined"
 			}
 
+			serviceNamespace := os.Getenv("LOCOMOTIVE_SERVICE_NAMESPACE")
+			if serviceNamespace == "" {
+				serviceNamespace = projectName
+			}
+
 			filteredLogs = append(filteredLogs, EnvironmentLogWithMetadata{
 				Log: logs.Payload.Data.EnvironmentLogs[i],
 				Metadata: map[string]string{
@@ -173,6 +179,8 @@ func SubscribeToServiceLogs(ctx context.Context, g *railway.GraphQLClient, logTr
 
 					"deployment_id":          logs.Payload.Data.EnvironmentLogs[i].Tags.DeploymentID.String(),
 					"deployment_instance_id": logs.Payload.Data.EnvironmentLogs[i].Tags.DeploymentInstanceID.String(),
+
+					"service_namespace": serviceNamespace,
 
 					"log_type": "environment",
 				},
