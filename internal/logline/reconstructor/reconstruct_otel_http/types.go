@@ -1,4 +1,4 @@
-package reconstruct_otel_http
+package reconstruct_otel
 
 type logsData struct {
 	ResourceLogs []resourceLog `json:"resourceLogs"`
