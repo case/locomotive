@@ -38,6 +38,4 @@ type config struct {
 
 	EnableHttpLogs   bool `env:"ENABLE_HTTP_LOGS" envDefault:"false"`
 	EnableDeployLogs bool `env:"ENABLE_DEPLOY_LOGS" envDefault:"true"`
-
-	ServiceNamespace string `env:"SERVICE_NAMESPACE"`
 }

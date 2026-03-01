@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	cache "github.com/Code-Hex/go-generics-cache"
@@ -50,11 +49,7 @@ func getMetadataForDeployment(ctx context.Context, g *railway.GraphQLClient, dep
 
 	metadata["deployment_id"] = deploymentId.String()
 
-	serviceNamespace := os.Getenv("LOCOMOTIVE_SERVICE_NAMESPACE")
-	if serviceNamespace == "" {
-		serviceNamespace = deployment.Deployment.Service.Project.Name
-	}
-	metadata["service_namespace"] = serviceNamespace
+	metadata["service_namespace"] = deployment.Deployment.Service.Project.Name
 
 	metadataDeploymentCache.Set(deploymentId, metadata, cache.WithExpiration((10 * time.Minute)))
 
