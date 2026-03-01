@@ -49,8 +49,6 @@ func getMetadataForDeployment(ctx context.Context, g *railway.GraphQLClient, dep
 
 	metadata["deployment_id"] = deploymentId.String()
 
-	metadata["service_namespace"] = deployment.Deployment.Service.Project.Name
-
 	metadataDeploymentCache.Set(deploymentId, metadata, cache.WithExpiration((10 * time.Minute)))
 
 	return metadata, nil

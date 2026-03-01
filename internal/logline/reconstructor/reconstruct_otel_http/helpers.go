@@ -81,12 +81,12 @@ func buildResourceAttributes(metadata map[string]string) []attribute {
 		attrs = append(attrs, stringAttribute("deployment.environment.name", environmentName))
 	}
 
-	if serviceNamespace, ok := metadata["service_namespace"]; ok {
-		attrs = append(attrs, stringAttribute("service.namespace", serviceNamespace))
+	if projectName, ok := metadata["project_name"]; ok {
+		attrs = append(attrs, stringAttribute("service.namespace", projectName))
 	}
 
 	for key, value := range metadata {
-		if key == "service_name" || key == "environment_name" || key == "service_namespace" {
+		if key == "service_name" || key == "environment_name" || key == "project_name" {
 			continue
 		}
 		attrs = append(attrs, stringAttribute(key, value))

@@ -35,12 +35,12 @@ func TestBuildResourceAttributes(t *testing.T) {
 			},
 		},
 		{
-			name: "maps service_namespace to OTEL convention",
+			name: "maps project_name to service.namespace",
 			metadata: map[string]string{
-				"service_namespace": "my-namespace",
+				"project_name": "my-project",
 			},
 			want: []attribute{
-				stringAttribute("service.namespace", "my-namespace"),
+				stringAttribute("service.namespace", "my-project"),
 			},
 		},
 		{
@@ -55,16 +55,16 @@ func TestBuildResourceAttributes(t *testing.T) {
 		{
 			name: "all mapped keys plus passthrough",
 			metadata: map[string]string{
-				"service_name":      "my-api",
-				"environment_name":  "production",
-				"service_namespace": "my-namespace",
-				"deployment_id":     "deploy-456",
-				"log_type":          "environment",
+				"service_name":     "my-api",
+				"environment_name": "production",
+				"project_name":     "my-project",
+				"deployment_id":    "deploy-456",
+				"log_type":         "environment",
 			},
 			want: []attribute{
 				stringAttribute("service.name", "my-api"),
 				stringAttribute("deployment.environment.name", "production"),
-				stringAttribute("service.namespace", "my-namespace"),
+				stringAttribute("service.namespace", "my-project"),
 				stringAttribute("deployment_id", "deploy-456"),
 				stringAttribute("log_type", "environment"),
 			},
@@ -72,12 +72,12 @@ func TestBuildResourceAttributes(t *testing.T) {
 		{
 			name: "mapped keys do not appear twice",
 			metadata: map[string]string{
-				"service_name":      "my-api",
-				"service_namespace": "my-namespace",
+				"service_name": "my-api",
+				"project_name": "my-project",
 			},
 			want: []attribute{
 				stringAttribute("service.name", "my-api"),
-				stringAttribute("service.namespace", "my-namespace"),
+				stringAttribute("service.namespace", "my-project"),
 			},
 		},
 	}
