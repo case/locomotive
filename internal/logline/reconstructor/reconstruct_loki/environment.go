@@ -22,6 +22,8 @@ func EnvironmentLogStreams(logs []environment_logs.EnvironmentLogWithMetadata) (
 			streams, _ = sjson.Set(streams, fmt.Sprintf("streams.%d.stream.%s", i, key), value)
 		}
 
+		streams, _ = sjson.Set(streams, fmt.Sprintf("streams.%d.stream.service_namespace", i), logs[i].Metadata["project_name"])
+
 		timestamp := strconv.FormatInt(cmp.Or(reconstructor.TryExtractTimestamp(logs[i]), logs[i].Log.Timestamp).UnixNano(), 10)
 
 		streams, _ = sjson.Set(streams, fmt.Sprintf("streams.%d.values.0.0", i), timestamp)

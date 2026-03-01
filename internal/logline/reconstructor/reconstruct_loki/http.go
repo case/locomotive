@@ -20,6 +20,8 @@ func HttpLogStreams(logs []http_logs.DeploymentHttpLogWithMetadata) ([]byte, err
 			streams, _ = sjson.Set(streams, fmt.Sprintf("streams.%d.stream.%s", i, key), value)
 		}
 
+		streams, _ = sjson.Set(streams, fmt.Sprintf("streams.%d.stream.service_namespace", i), logs[i].Metadata["project_name"])
+
 		timestamp := strconv.FormatInt(logs[i].Timestamp.UnixNano(), 10)
 
 		streams, _ = sjson.Set(streams, fmt.Sprintf("streams.%d.values.0.0", i), timestamp)
