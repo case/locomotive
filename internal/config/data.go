@@ -8,7 +8,7 @@ import (
 	"github.com/brody192/locomotive/internal/logline/reconstructor/reconstruct_datadog"
 	"github.com/brody192/locomotive/internal/logline/reconstructor/reconstruct_json"
 	"github.com/brody192/locomotive/internal/logline/reconstructor/reconstruct_loki"
-	"github.com/brody192/locomotive/internal/logline/reconstructor/reconstruct_otel_http"
+	"github.com/brody192/locomotive/internal/logline/reconstructor/reconstruct_otel"
 	"github.com/brody192/locomotive/internal/logline/reconstructor/reconstruct_papertrail"
 	"github.com/brody192/locomotive/internal/logline/reconstructor/reconstruct_sentry"
 )
@@ -90,7 +90,7 @@ var WebhookModeToConfig = map[WebhookMode]WebhookConfig{
 	},
 	WebhookModeOtelHTTP: {
 		Headers:                         map[string]string{},
-		EnvironmentLogReconstructorFunc: reconstruct_otel_http.EnvironmentLogsOtel,
-		HTTPLogReconstructorFunc:        reconstruct_otel_http.HttpLogsOtel,
+		EnvironmentLogReconstructorFunc: reconstruct_otel.EnvironmentLogsOtel,
+		HTTPLogReconstructorFunc:        reconstruct_otel.HttpLogsOtel,
 	},
 }

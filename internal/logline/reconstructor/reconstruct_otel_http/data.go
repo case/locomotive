@@ -1,4 +1,4 @@
-package reconstruct_otel_http
+package reconstruct_otel
 
 var severityTextToNumber = map[string]int{
 	"trace": 1,
