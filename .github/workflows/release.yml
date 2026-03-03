@@ -7,14 +7,20 @@ on:
 concurrency:
   group: release
 
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
 jobs:
-  release:
-    name: Build & Release
+  prepare:
+    name: Prepare Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
-      id-token: write
+    outputs:
+      skip: ${{ steps.pr.outputs.skip }}
+      tag: ${{ steps.version.outputs.tag }}
+      pr_number: ${{ steps.pr.outputs.pr_number }}
+      pr_title: ${{ steps.pr.outputs.pr_title }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -90,42 +96,103 @@ jobs:
           git tag ${{ steps.version.outputs.tag }}
           git push origin ${{ steps.version.outputs.tag }}
 
+  build:
+    name: Build (${{ matrix.platform }})
+    needs: prepare
+    if: needs.prepare.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Set up QEMU
-        if: steps.pr.outputs.skip != 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        if: steps.pr.outputs.skip != 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Log into ghcr.io
-        if: steps.pr.outputs.skip != 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
-        if: steps.pr.outputs.skip != 'true'
+      - name: Build and push by digest
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.tag }}
-            ghcr.io/${{ github.repository }}:latest
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          platforms: ${{ matrix.platform }}
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,scope=${{ matrix.platform }},mode=max
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ hashFiles('/tmp/digests/*') }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+
+  manifest:
+    name: Push Manifest
+    needs: [prepare, build]
+    if: needs.prepare.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digest-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push manifest
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            -t ${{ env.IMAGE }}:${{ needs.prepare.outputs.tag }} \
+            -t ${{ env.IMAGE }}:latest \
+            $(printf '${{ env.IMAGE }}@sha256:%s ' *)
+
+  release:
+    name: Create Release
+    needs: [prepare, manifest]
+    if: needs.prepare.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Create GitHub release
-        if: steps.pr.outputs.skip != 'true'
         uses: actions/github-script@v7
         env:
-          TAG: ${{ steps.version.outputs.tag }}
-          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
-          PR_TITLE: ${{ steps.pr.outputs.pr_title }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
+          PR_TITLE: ${{ needs.prepare.outputs.pr_title }}
         with:
           script: |
             await github.rest.repos.createRelease({
