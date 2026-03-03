@@ -73,10 +73,9 @@ jobs:
         if: steps.pr.outputs.skip != 'true'
         id: version
         run: |
-          LATEST=$(git tag -l 'v*' --sort=-v:refname | head -n1)
-          LATEST=${LATEST:-v0.0.0}
-          VERSION=${LATEST#v}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          LATEST=$(git tag -l | sed 's/^v//' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+          LATEST=${LATEST:-0.0.0}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST"
 
           case "${{ steps.pr.outputs.bump }}" in
             major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
@@ -84,8 +83,8 @@ jobs:
             patch) PATCH=$((PATCH + 1)) ;;
           esac
 
-          echo "tag=v${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
-          echo "Bumping ${LATEST} → v${MAJOR}.${MINOR}.${PATCH} (${{ steps.pr.outputs.bump }})"
+          echo "tag=${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
+          echo "Bumping ${LATEST} → ${MAJOR}.${MINOR}.${PATCH} (${{ steps.pr.outputs.bump }})"
 
       - name: Push tag
         if: steps.pr.outputs.skip != 'true'
