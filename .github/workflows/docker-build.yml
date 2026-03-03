@@ -50,15 +50,18 @@ jobs:
 
       - name: Export digest
         if: inputs.push
+        id: digest
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
+          slug="${{ matrix.platform }}"
+          echo "slug=${slug//\//-}" >> "$GITHUB_OUTPUT"
 
       - name: Upload digest
         if: inputs.push
         uses: actions/upload-artifact@v4
         with:
-          name: digest-${{ hashFiles('/tmp/digests/*') }}
+          name: digest-${{ steps.digest.outputs.slug }}
           path: /tmp/digests/*
           if-no-files-found: error
